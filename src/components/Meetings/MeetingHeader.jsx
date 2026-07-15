@@ -15,7 +15,7 @@ function MeetingHeader() {
         </p>
       </div>
 
-      {/* <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3 lg:flex">
+      <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3 lg:flex">
         <button
           className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-white px-4 text-sm font-bold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-50"
           type="button"
@@ -37,7 +37,7 @@ function MeetingHeader() {
           <Send size={17} />
           Tạo cuộc họp
         </button>
-      </div> */}
+      </div>
     </header>
   )
 }

@@ -3,6 +3,7 @@ import MainLayout from '@/layouts/MainLayout'
 import DashboardPage from '@/pages/DashboardPage'
 import DocumentsPage from '@/pages/DocumentsPage'
 import MeetingSchedulePage from '@/pages/MeetingSchedulePage'
+import MeetingRoomPage from '@/pages/MeetingRoomPage'
 import MeetingsPage from '@/pages/MeetingsPage'
 import MinutesPage from '@/pages/MinutesPage'
 import ReportsPage from '@/pages/ReportsPage'
@@ -13,6 +14,7 @@ import UsersPage from '@/pages/UsersPage'
 function AppRoutes() {
   return (
     <Routes>
+      <Route path="meeting-room/:id" element={<MeetingRoomPage />} />
       <Route element={<MainLayout />}>
         <Route index element={<DashboardPage />} />
         <Route path="lich-hop" element={<MeetingSchedulePage />} />
