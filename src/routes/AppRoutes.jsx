@@ -1,0 +1,31 @@
+import { Route, Routes } from 'react-router-dom'
+import MainLayout from '@/layouts/MainLayout'
+import DashboardPage from '@/pages/DashboardPage'
+import DocumentsPage from '@/pages/DocumentsPage'
+import MeetingSchedulePage from '@/pages/MeetingSchedulePage'
+import MeetingsPage from '@/pages/MeetingsPage'
+import MinutesPage from '@/pages/MinutesPage'
+import ReportsPage from '@/pages/ReportsPage'
+import RoomsPage from '@/pages/RoomsPage'
+import SettingsPage from '@/pages/SettingsPage'
+import UsersPage from '@/pages/UsersPage'
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route element={<MainLayout />}>
+        <Route index element={<DashboardPage />} />
+        <Route path="lich-hop" element={<MeetingSchedulePage />} />
+        <Route path="cuoc-hop" element={<MeetingsPage />} />
+        <Route path="phong-hop" element={<RoomsPage />} />
+        <Route path="tai-lieu" element={<DocumentsPage />} />
+        <Route path="bien-ban" element={<MinutesPage />} />
+        <Route path="nguoi-dung" element={<UsersPage />} />
+        <Route path="bao-cao" element={<ReportsPage />} />
+        <Route path="cai-dat" element={<SettingsPage />} />
+      </Route>
+    </Routes>
+  )
+}
+
+export default AppRoutes
