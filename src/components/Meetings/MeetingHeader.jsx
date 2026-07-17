@@ -1,6 +1,6 @@
 import { ArrowLeft, Save, Send } from 'lucide-react'
 
-function MeetingHeader() {
+function MeetingHeader({ onBack }) {
   return (
     <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div>
@@ -18,6 +18,7 @@ function MeetingHeader() {
       <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3 lg:flex">
         <button
           className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-white px-4 text-sm font-bold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-50"
+          onClick={onBack}
           type="button"
         >
           <ArrowLeft size={17} />
@@ -25,14 +26,20 @@ function MeetingHeader() {
         </button>
         <button
           className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-white px-4 text-sm font-bold text-[#2563EB] shadow-sm ring-1 ring-blue-100 transition hover:bg-blue-50"
-          type="button"
+          form="meeting-form"
+          name="intent"
+          value="DRAFT"
+          type="submit"
         >
           <Save size={17} />
           Lưu nháp
         </button>
         <button
           className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#2563EB] px-4 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700"
-          type="button"
+          form="meeting-form"
+          name="intent"
+          value="SCHEDULED"
+          type="submit"
         >
           <Send size={17} />
           Tạo cuộc họp

@@ -10,7 +10,10 @@ import {
   Settings,
   Users,
   Video,
+  LogOut,
 } from 'lucide-react'
+import { useDispatch } from 'react-redux'
+import { logout } from '@/app/authSlice'
 
 const navItems = [
   { label: 'Tổng quan', path: '/', icon: LayoutDashboard },
@@ -25,6 +28,7 @@ const navItems = [
 ]
 
 function Sidebar() {
+  const dispatch = useDispatch()
   return (
     <aside className="sticky top-0 z-20 bg-slate-950 px-3 py-3 text-white shadow-xl sm:px-4 sm:py-4 lg:min-h-svh lg:px-5 lg:py-6">
       <div className="hidden items-center gap-3 lg:flex">
@@ -57,6 +61,13 @@ function Sidebar() {
           </NavLink>
         ))}
       </nav>
+      <button
+        className="mt-3 hidden h-11 w-full items-center gap-3 rounded-2xl px-4 text-sm font-semibold text-slate-300 transition hover:bg-white/10 hover:text-white lg:flex"
+        onClick={() => dispatch(logout())}
+        type="button"
+      >
+        <LogOut size={18} /> Đăng xuất
+      </button>
     </aside>
   )
 }

@@ -1,5 +1,4 @@
 import { CalendarDays, CalendarRange, CalendarSearch, Search } from 'lucide-react'
-import { meetingHosts, meetingRooms, meetingStatuses, meetingTypes } from '@/datas/calendarData'
 import CalendarFilter from './CalendarFilter'
 import CalendarLegend from './CalendarLegend'
 
@@ -16,58 +15,61 @@ function CalendarToolbar({
   searchValue,
   viewMode,
   onViewModeChange,
+  hosts = [],
+  rooms = [],
+  statuses = [],
+  types = [],
 }) {
   return (
-    <section className="grid gap-4 rounded-[20px] bg-white p-4 shadow-sm ring-1 ring-slate-200/70 sm:p-5">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-        <div className="grid flex-1 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1.2fr)_repeat(4,minmax(150px,1fr))]">
-          <label className="grid gap-1.5">
-            <span className="text-xs font-bold text-slate-500">Tìm kiếm cuộc họp</span>
-            <span className="flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 transition focus-within:border-[#2563EB] focus-within:ring-4 focus-within:ring-blue-100">
-              <Search size={18} className="shrink-0 text-slate-400" />
-              <input
-                className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:text-slate-400"
-                onChange={(event) => onSearchChange(event.target.value)}
-                placeholder="Nhập tên cuộc họp..."
-                value={searchValue}
-              />
-            </span>
-          </label>
+    <section className="flex flex-col gap-2.5 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-slate-200/70">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+          <span className="flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 transition focus-within:border-[#2563EB] focus-within:ring-4 focus-within:ring-blue-50 w-full min-w-[180px] sm:w-auto sm:flex-1 sm:max-w-xs">
+            <Search size={14} className="shrink-0 text-slate-400" />
+            <input
+              className="min-w-0 flex-1 bg-transparent text-xs font-semibold text-slate-700 outline-none placeholder:text-slate-400"
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder="Tìm kiếm cuộc họp..."
+              value={searchValue}
+            />
+          </span>
 
           <CalendarFilter
-            label="Phòng họp"
+            label="Phòng"
             name="room"
             onChange={onFilterChange}
-            options={meetingRooms}
+            options={rooms}
             value={filters.room}
           />
           <CalendarFilter
-            label="Người chủ trì"
+            label="Chủ trì"
             name="host"
             onChange={onFilterChange}
-            options={meetingHosts}
+            options={hosts}
             value={filters.host}
           />
           <CalendarFilter
-            label="Loại cuộc họp"
+            label="Loại họp"
             name="type"
             onChange={onFilterChange}
-            options={meetingTypes}
+            options={types}
             value={filters.type}
           />
           <CalendarFilter
             label="Trạng thái"
             name="status"
             onChange={onFilterChange}
-            options={meetingStatuses}
+            options={statuses}
             value={filters.status}
           />
         </div>
 
-        <div className="flex rounded-2xl bg-slate-100 p-1">
+        {/* View Mode */}
+        <div className="flex rounded-xl bg-slate-100 p-0.5 shrink-0 self-end lg:self-auto">
           {viewOptions.map(({ value, label, icon: Icon }) => (
             <button
-              className={`inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-xs font-bold transition sm:flex-none sm:text-sm ${
+              className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition ${
                 viewMode === value
                   ? 'bg-[#2563EB] text-white shadow-sm'
                   : 'text-slate-600 hover:bg-white hover:text-slate-950'
@@ -76,14 +78,16 @@ function CalendarToolbar({
               onClick={() => onViewModeChange(value)}
               type="button"
             >
-              <Icon size={16} />
+              <Icon size={14} />
               {label}
             </button>
           ))}
         </div>
       </div>
 
-      <CalendarLegend />
+      <div className="border-t border-slate-100 pt-2">
+        <CalendarLegend types={types} />
+      </div>
     </section>
   )
 }

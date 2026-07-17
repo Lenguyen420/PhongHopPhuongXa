@@ -1,18 +1,30 @@
 import { Bell, CheckSquare, QrCode, ToggleLeft, Video } from 'lucide-react'
 
-function MeetingOptions() {
+function MeetingOptions({ meeting }) {
   return (
     <aside className="grid gap-4 lg:sticky lg:top-6">
       <OptionCard icon={CheckSquare} title="Biểu quyết">
-        <Switch label="Có / Không" defaultChecked />
+        <Switch
+          label="Có / Không"
+          name="votingEnabled"
+          defaultChecked={meeting?.options?.voting ?? true}
+        />
       </OptionCard>
 
       <OptionCard icon={Video} title="Ghi hình">
-        <Switch label="Có / Không" />
+        <Switch
+          label="Có / Không"
+          name="recordingEnabled"
+          defaultChecked={meeting?.options?.recording ?? false}
+        />
       </OptionCard>
 
       <OptionCard icon={QrCode} title="Điểm danh">
-        <Switch label="Bật điểm danh" defaultChecked />
+        <Switch
+          label="Bật điểm danh"
+          name="attendanceEnabled"
+          defaultChecked={meeting?.options?.attendance !== 'NONE'}
+        />
         <div className="mt-4 grid gap-2">
           {['QR Code', 'FaceID', 'Thủ công', 'QR + FaceID'].map((item, index) => (
             <label
@@ -21,8 +33,14 @@ function MeetingOptions() {
             >
               <input
                 className="h-4 w-4 accent-[#2563EB]"
-                defaultChecked={index === 0}
+                defaultChecked={
+                  meeting
+                    ? meeting.options?.attendance ===
+                      ['QR_CODE', 'FACE_ID', 'MANUAL', 'QR_FACE_ID'][index]
+                    : index === 0
+                }
                 name="attendanceType"
+                value={['QR_CODE', 'FACE_ID', 'MANUAL', 'QR_FACE_ID'][index]}
                 type="radio"
               />
               {item}
@@ -40,7 +58,11 @@ function MeetingOptions() {
             >
               <input
                 className="h-4 w-4 rounded accent-[#2563EB]"
-                defaultChecked={index < 2}
+                defaultChecked={
+                  meeting ? meeting.options?.reminders?.includes([30, 60, 1440][index]) : index < 2
+                }
+                name="reminderMinutes"
+                value={[30, 60, 1440][index]}
                 type="checkbox"
               />
               {item}
@@ -66,12 +88,17 @@ function OptionCard({ children, icon: Icon, title }) {
   )
 }
 
-function Switch({ defaultChecked = false, label }) {
+function Switch({ defaultChecked = false, label, name }) {
   return (
     <label className="flex items-center justify-between gap-4 rounded-2xl bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
       <span>{label}</span>
       <span className="relative inline-flex">
-        <input className="peer sr-only" defaultChecked={defaultChecked} type="checkbox" />
+        <input
+          className="peer sr-only"
+          defaultChecked={defaultChecked}
+          name={name}
+          type="checkbox"
+        />
         <span className="h-7 w-12 rounded-full bg-slate-300 transition peer-checked:bg-[#2563EB]" />
         <span className="absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5" />
         <ToggleLeft className="sr-only" size={16} />

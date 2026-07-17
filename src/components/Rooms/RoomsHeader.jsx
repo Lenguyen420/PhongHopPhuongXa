@@ -1,6 +1,6 @@
 import { Plus, RefreshCw } from 'lucide-react'
 
-function RoomsHeader({ onCreateRoom }) {
+function RoomsHeader({ onCreateRoom, onRefresh }) {
   return (
     <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div>
@@ -26,6 +26,7 @@ function RoomsHeader({ onCreateRoom }) {
         </button>
         <button
           className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-white px-4 text-sm font-bold text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-50"
+          onClick={onRefresh}
           type="button"
         >
           <RefreshCw size={17} />
