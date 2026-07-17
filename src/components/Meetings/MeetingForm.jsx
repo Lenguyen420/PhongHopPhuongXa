@@ -25,20 +25,35 @@ import {
   Video,
 } from 'lucide-react'
 
-function MeetingForm({ departments, hosts, rooms, sampleFiles, types }) {
+function MeetingForm({
+  departments,
+  hosts,
+  rooms,
+  sampleFiles,
+  types,
+  meeting,
+  onFilesChange,
+  onDeleteFile,
+}) {
   return (
-    <form className="grid gap-4 sm:gap-6">
+    <div className="grid gap-4 sm:gap-6">
       <FormCard icon={FileText} title="Thông tin cuộc họp">
         <div className="grid gap-4 lg:grid-cols-2">
           <Field icon={Type} label="Tên cuộc họp">
             <input
               className={inputClass}
-              defaultValue="Họp giao ban đầu tuần"
+              defaultValue={meeting?.title ?? ''}
+              name="title"
+              required
               placeholder="Nhập tên cuộc họp"
             />
           </Field>
           <Field icon={FileText} label="Loại cuộc họp">
-            <select className={inputClass} defaultValue="giao-ban">
+            <select
+              className={inputClass}
+              defaultValue={meeting?.typeId ?? types[0]?.id}
+              name="typeId"
+            >
               {types.map((type) => (
                 <option key={type.id} value={type.id}>
                   {type.name}
@@ -49,7 +64,8 @@ function MeetingForm({ departments, hosts, rooms, sampleFiles, types }) {
           <Field className="lg:col-span-2" icon={AlignLeft} label="Mô tả">
             <textarea
               className={`${inputClass} min-h-28 resize-y py-3`}
-              defaultValue="Trao đổi tình hình hoạt động trong tuần và phân công nhiệm vụ trọng tâm."
+              defaultValue={meeting?.description ?? ''}
+              name="description"
               placeholder="Nhập mô tả cuộc họp"
             />
           </Field>
@@ -59,17 +75,40 @@ function MeetingForm({ departments, hosts, rooms, sampleFiles, types }) {
       <FormCard icon={Clock3} title="Thời gian">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Field icon={CalendarDays} label="Ngày">
-            <input className={inputClass} defaultValue="2026-07-15" type="date" />
+            <input
+              className={inputClass}
+              defaultValue={meeting?.date ?? new Date().toISOString().slice(0, 10)}
+              name="date"
+              required
+              type="date"
+            />
           </Field>
           <Field icon={Clock3} label="Giờ bắt đầu">
-            <input className={inputClass} defaultValue="08:00" type="time" />
+            <input
+              className={inputClass}
+              defaultValue={meeting?.startTime ?? '08:00'}
+              name="startTime"
+              required
+              type="time"
+            />
           </Field>
           <Field icon={Clock3} label="Giờ kết thúc">
-            <input className={inputClass} defaultValue="09:30" type="time" />
+            <input
+              className={inputClass}
+              defaultValue={meeting?.endTime ?? '09:00'}
+              name="endTime"
+              required
+              type="time"
+            />
           </Field>
           <label className="flex items-end">
             <span className="flex h-12 w-full items-center gap-3 rounded-2xl bg-slate-50 px-4 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
-              <input className="h-4 w-4 accent-[#2563EB]" type="checkbox" />
+              <input
+                className="h-4 w-4 accent-[#2563EB]"
+                defaultChecked={meeting?.allDay}
+                name="allDay"
+                type="checkbox"
+              />
               Họp cả ngày
             </span>
           </label>
@@ -90,8 +129,13 @@ function MeetingForm({ departments, hosts, rooms, sampleFiles, types }) {
               >
                 <input
                   className="h-4 w-4 accent-[#2563EB]"
-                  defaultChecked={index === 0}
+                  defaultChecked={
+                    meeting
+                      ? meeting.meetingMode === ['IN_PERSON', 'ONLINE', 'HYBRID'][index]
+                      : index === 0
+                  }
                   name="meetingMode"
+                  value={['IN_PERSON', 'ONLINE', 'HYBRID'][index]}
                   type="radio"
                 />
                 <Icon size={18} className="text-[#2563EB]" />
@@ -101,7 +145,11 @@ function MeetingForm({ departments, hosts, rooms, sampleFiles, types }) {
           </div>
 
           <Field icon={Building2} label="Chọn phòng">
-            <select className={inputClass} defaultValue="large">
+            <select
+              className={inputClass}
+              defaultValue={meeting?.roomId ?? rooms[0]?.id}
+              name="roomId"
+            >
               {rooms.map((room) => (
                 <option key={room.id} value={room.id}>
                   {room.name} - {room.capacity} người
@@ -114,10 +162,16 @@ function MeetingForm({ departments, hosts, rooms, sampleFiles, types }) {
 
       <FormCard icon={UserRound} title="Người chủ trì">
         <Field icon={UserRound} label="Chọn người chủ trì">
-          <select className={inputClass} defaultValue="chu-tich">
+          <select
+            className={inputClass}
+            defaultValue={meeting?.hostId ?? hosts[0]?.id}
+            name="hostId"
+            required
+          >
             {hosts.map((host) => (
               <option key={host.id} value={host.id}>
-                {host.name}
+                {host.username}
+                {host.position ? ` - ${host.position}` : ''}
               </option>
             ))}
           </select>
@@ -134,8 +188,13 @@ function MeetingForm({ departments, hosts, rooms, sampleFiles, types }) {
               >
                 <input
                   className="h-4 w-4 accent-[#2563EB]"
-                  defaultChecked={index === 1}
+                  defaultChecked={
+                    meeting
+                      ? meeting.participantMode === (index === 0 ? 'ALL_STAFF' : 'DEPARTMENTS')
+                      : index === 1
+                  }
                   name="participantsMode"
+                  value={index === 0 ? 'ALL_STAFF' : 'DEPARTMENTS'}
                   type="radio"
                 />
                 {item}
@@ -155,7 +214,13 @@ function MeetingForm({ departments, hosts, rooms, sampleFiles, types }) {
                 >
                   <input
                     className="h-4 w-4 rounded accent-[#2563EB]"
-                    defaultChecked={index < 3}
+                    defaultChecked={
+                      meeting
+                        ? meeting.departments?.some((item) => item.id === department.id)
+                        : index < 3
+                    }
+                    name="departmentIds"
+                    value={department.id}
                     type="checkbox"
                   />
                   {department.name}
@@ -177,16 +242,37 @@ function MeetingForm({ departments, hosts, rooms, sampleFiles, types }) {
             </div>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <Field icon={UserRound} label="Họ tên">
-                <input className={inputClass} placeholder="Nguyễn Văn B" />
+                <input
+                  className={inputClass}
+                  defaultValue={meeting?.guests?.[0]?.name ?? ''}
+                  name="guestName"
+                  placeholder="Nguyễn Văn B"
+                />
               </Field>
               <Field icon={Building2} label="Đơn vị">
-                <input className={inputClass} placeholder="UBND xã" />
+                <input
+                  className={inputClass}
+                  defaultValue={meeting?.guests?.[0]?.unit ?? ''}
+                  name="guestUnit"
+                  placeholder="UBND xã"
+                />
               </Field>
               <Field icon={Mail} label="Email">
-                <input className={inputClass} placeholder="email@donvi.gov.vn" type="email" />
+                <input
+                  className={inputClass}
+                  defaultValue={meeting?.guests?.[0]?.email ?? ''}
+                  name="guestEmail"
+                  placeholder="email@donvi.gov.vn"
+                  type="email"
+                />
               </Field>
               <Field icon={Phone} label="Điện thoại">
-                <input className={inputClass} placeholder="0900 000 000" />
+                <input
+                  className={inputClass}
+                  defaultValue={meeting?.guests?.[0]?.phone ?? ''}
+                  name="guestPhone"
+                  placeholder="0900 000 000"
+                />
               </Field>
             </div>
           </div>
@@ -210,7 +296,8 @@ function MeetingForm({ departments, hosts, rooms, sampleFiles, types }) {
           </div>
           <textarea
             className="min-h-48 w-full resize-y border-0 bg-white p-4 text-sm font-medium leading-7 text-slate-700 outline-none placeholder:text-slate-400"
-            defaultValue="1. Đánh giá kết quả thực hiện nhiệm vụ tuần qua&#10;2. Triển khai nhiệm vụ trọng tâm tuần tới&#10;3. Phân công đơn vị phụ trách và thời hạn hoàn thành"
+            defaultValue={meeting?.agenda ?? ''}
+            name="agenda"
           />
         </div>
       </FormCard>
@@ -225,14 +312,19 @@ function MeetingForm({ departments, hosts, rooms, sampleFiles, types }) {
             <span className="mt-1 text-xs font-medium text-slate-500">
               Kéo thả file hoặc bấm để chọn
             </span>
-            <input className="sr-only" multiple type="file" />
+            <input
+              className="sr-only"
+              multiple
+              onChange={(event) => onFilesChange?.([...event.target.files])}
+              type="file"
+            />
           </label>
 
           <div className="grid gap-3">
             {sampleFiles.map((file) => (
               <div
                 className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3 ring-1 ring-slate-200"
-                key={file.id}
+                key={file.id ?? file.name}
               >
                 <span className="flex min-w-0 items-center gap-3">
                   {file.type === 'Excel' ? (
@@ -242,15 +334,16 @@ function MeetingForm({ departments, hosts, rooms, sampleFiles, types }) {
                   )}
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-bold text-slate-800">
-                      {file.name}
+                      {file.fileName ?? file.name}
                     </span>
                     <span className="text-xs font-medium text-slate-500">
-                      {file.type} - {file.size}
+                      {file.mimeType ?? file.type} - {file.size}
                     </span>
                   </span>
                 </span>
                 <button
                   className="text-sm font-bold text-[#EF4444] hover:text-red-700"
+                  onClick={() => onDeleteFile?.(file)}
                   type="button"
                 >
                   Xóa
@@ -260,7 +353,7 @@ function MeetingForm({ departments, hosts, rooms, sampleFiles, types }) {
           </div>
         </div>
       </FormCard>
-    </form>
+    </div>
   )
 }
 

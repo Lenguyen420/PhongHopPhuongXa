@@ -12,12 +12,21 @@ function CalendarMonthView({ currentDate, meetings, onEventClick }) {
   const todayKey = toDateKey(new Date())
   const currentMonth = currentDate.getMonth()
 
+  // Divide the 42 days into 6 weeks of 7 days
+  const weeks = Array.from({ length: 6 }, (_, index) => days.slice(index * 7, (index + 1) * 7))
+
+  // Exclude weeks that consist entirely of days from other months
+  const activeWeeks = weeks.filter((week) =>
+    week.some((day) => day.getMonth() === currentMonth),
+  )
+  const activeDays = activeWeeks.flat()
+
   return (
-    <section className="overflow-hidden rounded-[20px] bg-white shadow-sm ring-1 ring-slate-200/70">
-      <div className="hidden grid-cols-7 border-b border-slate-200 bg-slate-50 md:grid">
+    <section className="lg:h-full lg:flex lg:flex-col overflow-hidden rounded-[20px] bg-white shadow-sm ring-1 ring-slate-200/70">
+      <div className="hidden grid-cols-7 border-b border-slate-200 bg-slate-50 md:grid shrink-0">
         {weekdays.map((day) => (
           <div
-            className="px-3 py-3 text-center text-xs font-bold uppercase text-slate-500"
+            className="px-3 py-2.5 text-center text-xs font-bold uppercase text-slate-500"
             key={day}
           >
             {day}
@@ -25,30 +34,36 @@ function CalendarMonthView({ currentDate, meetings, onEventClick }) {
         ))}
       </div>
 
-      <div className="hidden grid-cols-7 md:grid">
-        {days.map((day) => {
+      <div
+        className="hidden grid-cols-7 md:grid flex-1 min-h-0"
+        style={{ gridTemplateRows: `repeat(${activeWeeks.length}, minmax(0, 1fr))` }}
+      >
+        {activeDays.map((day) => {
           const dateKey = toDateKey(day)
           const dayMeetings = getMeetingsByDate(meetings, day)
           const isToday = dateKey === todayKey
           const isOtherMonth = day.getMonth() !== currentMonth
 
-          return (
+          return isOtherMonth ? (
             <div
-              className={`min-h-36 border-b border-r border-slate-200 p-2 ${
-                isOtherMonth ? 'bg-slate-50/60 text-slate-400' : 'bg-white'
-              }`}
+              className="border-b border-r border-slate-100 bg-slate-50/30"
+              key={dateKey}
+            />
+          ) : (
+            <div
+              className="border-b border-r border-slate-200 p-1.5 flex flex-col min-h-0 overflow-hidden bg-white"
               key={dateKey}
             >
-              <div className="mb-2 flex justify-end">
+              <div className="mb-1 flex justify-end shrink-0">
                 <span
-                  className={`grid h-7 w-7 place-items-center rounded-full text-sm font-bold ${
+                  className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${
                     isToday ? 'bg-[#2563EB] text-white' : 'text-slate-700'
                   }`}
                 >
                   {day.getDate()}
                 </span>
               </div>
-              <div className="grid gap-1.5">
+              <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {dayMeetings.slice(0, 3).map((meeting) => (
                   <CalendarEvent
                     compact
@@ -58,7 +73,7 @@ function CalendarMonthView({ currentDate, meetings, onEventClick }) {
                   />
                 ))}
                 {dayMeetings.length > 3 && (
-                  <span className="px-2 text-xs font-bold text-slate-500">
+                  <span className="px-1.5 py-0.5 text-[10px] font-bold text-slate-500">
                     +{dayMeetings.length - 3} cuộc họp
                   </span>
                 )}

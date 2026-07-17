@@ -1,6 +1,6 @@
 import { Captions, Mic, MonitorUp, PhoneOff, Settings, Video } from 'lucide-react'
 
-function MeetingRoomToolbar() {
+function MeetingRoomToolbar({ onLeave }) {
   return (
     <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-white/10 bg-slate-950/85 px-4 py-3 text-white backdrop-blur">
       <div className="mx-auto flex max-w-4xl items-center justify-center gap-2 sm:gap-3">
@@ -10,7 +10,7 @@ function MeetingRoomToolbar() {
         <ControlButton icon={MonitorUp} label="Trình chiếu" />
         <button
           className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#EF4444] px-5 text-sm font-bold text-white shadow-lg shadow-red-950/30 transition hover:bg-red-600"
-          onClick={() => window.close()}
+          onClick={onLeave}
           type="button"
         >
           <PhoneOff size={20} />

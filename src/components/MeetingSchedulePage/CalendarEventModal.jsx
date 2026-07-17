@@ -14,15 +14,16 @@ import {
   X,
 } from 'lucide-react'
 import { formatFullDate, parseDate, typeStyles } from './calendarUtils'
+import { downloadAttachment } from '@/services/files'
 
-function CalendarEventModal({ meeting, onClose }) {
+function CalendarEventModal({ meeting, onClose, onEdit, onCancel }) {
   if (!meeting) {
     return null
   }
 
   const styles = typeStyles[meeting.type] ?? typeStyles['giao-ban']
-  const hasMinutes = meeting.minutesStatus === 'Đã cập nhật'
-  const meetingRoomId = meeting.roomId ?? `meeting-${String(meeting.id).padStart(3, '0')}`
+  const hasMinutes = meeting.minutesStatus && meeting.minutesStatus !== 'NONE'
+  const meetingRoomId = meeting.id
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-3 py-6 backdrop-blur-sm">
@@ -74,7 +75,7 @@ function CalendarEventModal({ meeting, onClose }) {
               {meeting.host}
             </InfoItem>
             <InfoItem icon={Users} label="Phòng ban tham dự">
-              {meeting.departments?.join(', ') || 'Toàn bộ cán bộ'}
+              {meeting.departments?.map((item) => item.name).join(', ') || 'Toàn bộ cán bộ'}
             </InfoItem>
           </div>
 
@@ -111,9 +112,9 @@ function CalendarEventModal({ meeting, onClose }) {
                 {meeting.participants.map((participant) => (
                   <li
                     className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 ring-1 ring-slate-200"
-                    key={participant}
+                    key={participant.id}
                   >
-                    {participant}
+                    {participant.name} - {participant.role}
                   </li>
                 ))}
               </ul>
@@ -155,15 +156,16 @@ function CalendarEventModal({ meeting, onClose }) {
                 {meeting.documents.map((document) => (
                   <div
                     className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3 ring-1 ring-slate-200"
-                    key={document}
+                    key={document.id}
                   >
                     <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-slate-700">
                       <File className="shrink-0 text-[#2563EB]" size={17} />
-                      <span className="truncate">{document}</span>
+                      <span className="truncate">{document.fileName}</span>
                     </span>
                     <button
-                      aria-label={`Tải xuống ${document}`}
+                      aria-label={`Tải xuống ${document.fileName}`}
                       className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-slate-500 transition hover:bg-white hover:text-[#2563EB]"
+                      onClick={() => downloadAttachment(document)}
                       type="button"
                     >
                       <Download size={16} />
@@ -197,6 +199,7 @@ function CalendarEventModal({ meeting, onClose }) {
         <footer className="shrink-0 border-t border-slate-200 bg-white p-4 sm:grid sm:grid-cols-3 sm:gap-2 sm:px-6">
           <button
             className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#2563EB] px-4 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700"
+            disabled={!meeting.canJoin}
             onClick={() => window.open(`/meeting-room/${meetingRoomId}`, '_blank')}
             type="button"
           >
@@ -205,6 +208,8 @@ function CalendarEventModal({ meeting, onClose }) {
           </button>
           <button
             className="mt-2 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-200 sm:mt-0"
+            disabled={!meeting.canEdit}
+            onClick={() => onEdit?.(meeting)}
             type="button"
           >
             <Pencil size={18} />
@@ -212,6 +217,8 @@ function CalendarEventModal({ meeting, onClose }) {
           </button>
           <button
             className="mt-2 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-red-50 px-4 text-sm font-bold text-[#EF4444] transition hover:bg-red-100 sm:mt-0"
+            disabled={!meeting.canCancel}
+            onClick={() => onCancel?.(meeting)}
             type="button"
           >
             <Trash2 size={18} />

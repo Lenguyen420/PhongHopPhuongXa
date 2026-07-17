@@ -11,11 +11,12 @@ import {
   Video,
   X,
 } from 'lucide-react'
+import { getRoomColor, roomColorStyles } from '@/datas/roomsData'
 
 const statusClasses = {
-  'Đang sử dụng': 'bg-[#ECFDF5] text-[#10B981] ring-[#A7F3D0]',
-  Trống: 'bg-slate-100 text-slate-600 ring-slate-200',
-  'Bảo trì': 'bg-[#FFFBEB] text-[#F59E0B] ring-[#FDE68A]',
+  'Đang sử dụng': 'bg-rose-50 text-rose-700 ring-rose-200/70',
+  Trống: 'bg-emerald-50 text-emerald-700 ring-emerald-200/70',
+  'Bảo trì': 'bg-amber-50 text-amber-700 ring-amber-200/70',
 }
 
 const deviceIcons = {
@@ -31,6 +32,9 @@ function RoomDetail({ onClose, room }) {
     return null
   }
 
+  const colorKey = room.color || getRoomColor(room.name)
+  const styles = roomColorStyles[colorKey] ?? roomColorStyles.blue
+
   const currentMeetingId =
     room.currentMeeting?.id ?? (room.id === 'room-01' ? 'meeting-001' : 'meeting-005')
 
@@ -39,13 +43,7 @@ function RoomDetail({ onClose, room }) {
       <section className="flex h-full w-full flex-col overflow-hidden bg-white shadow-2xl ring-1 ring-slate-200 sm:max-w-3xl sm:rounded-[20px]">
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-4 sm:p-6">
           <div className="min-w-0">
-            <span
-              className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ring-1 ${
-                statusClasses[room.status] ?? statusClasses.Trống
-              }`}
-            >
-              {room.status}
-            </span>
+            <StatusBadge status={room.status} />
             <h2 className="mt-3 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">
               {room.name}
             </h2>
@@ -67,10 +65,10 @@ function RoomDetail({ onClose, room }) {
           />
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <InfoCard icon={Users} label="Sức chứa" value={`${room.capacity} người`} />
-            <InfoCard icon={Ruler} label="Diện tích" value={room.area} />
-            <InfoCard icon={MapPin} label="Vị trí" value={room.location} />
-            <InfoCard icon={Monitor} label="Tầng" value={room.floor} />
+            <InfoCard icon={Users} label="Sức chứa" value={`${room.capacity} người`} styles={styles} />
+            <InfoCard icon={Ruler} label="Diện tích" value={room.area} styles={styles} />
+            <InfoCard icon={MapPin} label="Vị trí" value={room.location} styles={styles} />
+            <InfoCard icon={Monitor} label="Tầng" value={room.floor} styles={styles} />
           </div>
 
           <section className="mt-6 rounded-[20px] bg-slate-50 p-4 ring-1 ring-slate-200">
@@ -83,10 +81,10 @@ function RoomDetail({ onClose, room }) {
 
                 return (
                   <span
-                    className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold text-slate-700 ring-1 ring-slate-200"
+                    className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold text-slate-700 ring-1 ring-slate-200 shadow-sm"
                     key={device}
                   >
-                    <Icon size={15} className="text-[#2563EB]" />
+                    <Icon size={15} className={styles.iconColor} />
                     {device}
                   </span>
                 )
@@ -148,7 +146,7 @@ function RoomDetail({ onClose, room }) {
                 </button>
               </div>
             ) : (
-              <div className="rounded-[20px] bg-[#ECFDF5] p-4 text-sm font-bold text-[#10B981] ring-1 ring-[#A7F3D0]">
+              <div className="rounded-[20px] bg-emerald-50 p-4 text-sm font-bold text-emerald-700 ring-1 ring-emerald-200/70">
                 Phòng hiện đang trống.
               </div>
             )}
@@ -178,15 +176,27 @@ function RoomDetail({ onClose, room }) {
   )
 }
 
-function InfoCard({ icon: Icon, label, value }) {
+function StatusBadge({ status }) {
   return (
-    <div className="flex gap-3 rounded-[20px] bg-slate-50 p-4 ring-1 ring-slate-200">
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-[#2563EB] ring-1 ring-slate-200">
-        <Icon size={18} />
+    <span
+      className={`inline-flex w-fit shrink-0 rounded-full px-3 py-1 text-xs font-bold ring-1 ${
+        statusClasses[status] ?? statusClasses.Trống
+      }`}
+    >
+      {status}
+    </span>
+  )
+}
+
+function InfoCard({ icon: Icon, label, value, styles }) {
+  return (
+    <div className={`flex gap-3 rounded-[20px] p-4 ring-1 transition duration-200 ${styles.accentBg}`}>
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white ring-1 ring-slate-200/50 shadow-sm">
+        <Icon size={18} className={styles.iconColor} />
       </span>
       <div className="min-w-0">
-        <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p>
-        <p className="mt-1 truncate text-sm font-bold text-slate-900">{value}</p>
+        <p className="text-xs font-bold uppercase tracking-wide opacity-75">{label}</p>
+        <p className="mt-1 truncate text-sm font-bold">{value}</p>
       </div>
     </div>
   )

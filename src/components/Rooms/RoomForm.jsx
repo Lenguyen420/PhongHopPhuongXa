@@ -25,9 +25,10 @@ const deviceIcons = {
   'Màn hình': Monitor,
 }
 
-function RoomForm({ devices, mode = 'create', onClose, room, statuses }) {
+function RoomForm({ devices, mode = 'create', onClose, onSave, room, statuses }) {
   const isEditMode = mode === 'edit'
   const [previewImage, setPreviewImage] = useState(room?.image ?? '')
+  const [imageFile, setImageFile] = useState(null)
 
   const handleImageChange = (event) => {
     const file = event.target.files?.[0]
@@ -41,6 +42,7 @@ function RoomForm({ devices, mode = 'create', onClose, room, statuses }) {
       setPreviewImage(reader.result)
     }
     reader.readAsDataURL(file)
+    setImageFile(file)
   }
 
   return (
@@ -74,18 +76,46 @@ function RoomForm({ devices, mode = 'create', onClose, room, statuses }) {
           </div>
         </div>
 
-        <form className="min-h-0 flex-1 overflow-y-auto px-5 py-5 pb-8 sm:px-6">
+        <form
+          className="min-h-0 flex-1 overflow-y-auto px-5 py-5 pb-8 sm:px-6"
+          id="room-form"
+          onSubmit={(event) => {
+            event.preventDefault()
+            const data = new FormData(event.currentTarget)
+            onSave?.(
+              {
+                name: data.get('name'),
+                operationalStatus: data.get('operationalStatus'),
+                capacity: Number(data.get('capacity')),
+                area: data.get('area'),
+                location: data.get('location'),
+                floor: data.get('floor'),
+                devices: data.getAll('devices'),
+                layoutRows: Number(data.get('layoutRows')),
+                seatsPerRow: Number(data.get('seatsPerRow')),
+                lifecycleStatus: event.nativeEvent.submitter?.value || 'PUBLISHED',
+              },
+              imageFile,
+            )
+          }}
+        >
           <div className="grid gap-4 lg:grid-cols-2">
             <Field icon={Building2} label="Tên phòng">
               <input
                 className={inputClass}
                 defaultValue={room?.name ?? ''}
+                name="name"
+                required
                 placeholder="Nhập tên phòng họp"
               />
             </Field>
 
             <Field icon={Check} label="Trạng thái">
-              <select className={inputClass} defaultValue={room?.status ?? 'Trống'}>
+              <select
+                className={inputClass}
+                defaultValue={room?.operationalStatus ?? 'ACTIVE'}
+                name="operationalStatus"
+              >
                 {statuses
                   .filter((status) => status !== 'Tất cả')
                   .map((status) => (
@@ -100,6 +130,7 @@ function RoomForm({ devices, mode = 'create', onClose, room, statuses }) {
               <input
                 className={inputClass}
                 defaultValue={room?.capacity ?? 30}
+                name="capacity"
                 min="1"
                 placeholder="30"
                 type="number"
@@ -107,19 +138,30 @@ function RoomForm({ devices, mode = 'create', onClose, room, statuses }) {
             </Field>
 
             <Field icon={Ruler} label="Diện tích">
-              <input className={inputClass} defaultValue={room?.area ?? ''} placeholder="56 m²" />
+              <input
+                className={inputClass}
+                defaultValue={room?.area ?? ''}
+                name="area"
+                placeholder="56 m²"
+              />
             </Field>
 
             <Field icon={MapPin} label="Địa điểm">
               <input
                 className={inputClass}
                 defaultValue={room?.location ?? ''}
+                name="location"
                 placeholder="Khu hành chính UBND xã"
               />
             </Field>
 
             <Field icon={Layers} label="Tầng">
-              <input className={inputClass} defaultValue={room?.floor ?? ''} placeholder="Tầng 2" />
+              <input
+                className={inputClass}
+                defaultValue={room?.floor ?? ''}
+                name="floor"
+                placeholder="Tầng 2"
+              />
             </Field>
 
             <div className="grid gap-3 lg:col-span-2">
@@ -175,6 +217,8 @@ function RoomForm({ devices, mode = 'create', onClose, room, statuses }) {
                     <input
                       className="h-4 w-4 rounded accent-[#2563EB]"
                       defaultChecked={room?.devices?.includes(device) ?? device === 'Camera'}
+                      name="devices"
+                      value={device}
                       type="checkbox"
                     />
                     <Icon size={17} className="text-[#2563EB]" />
@@ -194,6 +238,7 @@ function RoomForm({ devices, mode = 'create', onClose, room, statuses }) {
                 <input
                   className={inputClass}
                   defaultValue={room?.layout?.rows ?? 4}
+                  name="layoutRows"
                   min="1"
                   type="number"
                 />
@@ -202,6 +247,7 @@ function RoomForm({ devices, mode = 'create', onClose, room, statuses }) {
                 <input
                   className={inputClass}
                   defaultValue={room?.layout?.seatsPerRow ?? 6}
+                  name="seatsPerRow"
                   min="1"
                   type="number"
                 />
@@ -221,14 +267,18 @@ function RoomForm({ devices, mode = 'create', onClose, room, statuses }) {
             </button>
             <button
               className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-bold text-[#2563EB] shadow-sm ring-1 ring-blue-100 transition hover:bg-blue-50"
-              type="button"
+              form="room-form"
+              value="DRAFT"
+              type="submit"
             >
               <Save size={18} />
               Lưu nháp
             </button>
             <button
               className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#2563EB] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700"
-              type="button"
+              form="room-form"
+              value="PUBLISHED"
+              type="submit"
             >
               <Check size={18} />
               {isEditMode ? 'Cập nhật phòng' : 'Thêm phòng'}
