@@ -1,17 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import {
-  BarChart3,
-  Building2,
-  Calendar,
-  CalendarClock,
-  ClipboardList,
-  FileText,
-  LayoutDashboard,
-  Settings,
-  Users,
-  Video,
-  LogOut,
-} from 'lucide-react'
+import { BarChart3, Building2, Calendar, CalendarClock, ClipboardList, FileText, HardDrive, LayoutDashboard, LogOut, Settings, Users, Video } from 'lucide-react'
 import { useDispatch } from 'react-redux'
 import { logout } from '@/app/authSlice'
 
@@ -20,6 +8,7 @@ const navItems = [
   { label: 'Lịch họp', path: '/lich-hop', icon: Calendar },
   { label: 'Tạo cuộc họp', path: '/cuoc-hop', icon: Video },
   { label: 'Phòng họp', path: '/phong-hop', icon: Building2 },
+  { label: 'Thiết bị', path: '/thiet-bi', icon: HardDrive },
   { label: 'Tài liệu', path: '/tai-lieu', icon: FileText },
   { label: 'Biên bản', path: '/bien-ban', icon: ClipboardList },
   { label: 'Người dùng', path: '/nguoi-dung', icon: Users },
@@ -29,6 +18,7 @@ const navItems = [
 
 function Sidebar() {
   const dispatch = useDispatch()
+
   return (
     <aside className="sticky top-0 z-20 bg-slate-950 px-3 py-3 text-white shadow-xl sm:px-4 sm:py-4 lg:min-h-svh lg:px-5 lg:py-6">
       <div className="hidden items-center gap-3 lg:flex">
@@ -43,30 +33,16 @@ function Sidebar() {
 
       <nav className="mt-0 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] lg:mt-8 lg:grid lg:overflow-visible lg:pb-0 [&::-webkit-scrollbar]:hidden">
         {navItems.map(({ label, path, icon: Icon }) => (
-          <NavLink
-            className={({ isActive }) =>
-              [
-                'flex h-10 shrink-0 items-center gap-2 rounded-2xl px-3 text-xs font-semibold transition min-[420px]:h-11 min-[420px]:gap-3 min-[420px]:px-4 min-[420px]:text-sm',
-                isActive
-                  ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-950/20'
-                  : 'text-slate-300 hover:bg-white/10 hover:text-white',
-              ].join(' ')
-            }
-            end={path === '/'}
-            key={path}
-            to={path}
-          >
+          <NavLink className={({ isActive }) => ['flex h-10 shrink-0 items-center gap-2 rounded-2xl px-3 text-xs font-semibold transition min-[420px]:h-11 min-[420px]:gap-3 min-[420px]:px-4 min-[420px]:text-sm', isActive ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-950/20' : 'text-slate-300 hover:bg-white/10 hover:text-white'].join(' ')} end={path === '/'} key={path} to={path}>
             <Icon aria-hidden="true" size={18} strokeWidth={2.1} />
             <span>{label}</span>
           </NavLink>
         ))}
       </nav>
-      <button
-        className="mt-3 hidden h-11 w-full items-center gap-3 rounded-2xl px-4 text-sm font-semibold text-slate-300 transition hover:bg-white/10 hover:text-white lg:flex"
-        onClick={() => dispatch(logout())}
-        type="button"
-      >
-        <LogOut size={18} /> Đăng xuất
+
+      <button className="mt-3 hidden h-11 w-full items-center gap-3 rounded-2xl px-4 text-sm font-semibold text-slate-300 transition hover:bg-white/10 hover:text-white lg:flex" onClick={() => dispatch(logout())} type="button">
+        <LogOut size={18} />
+        Đăng xuất
       </button>
     </aside>
   )
