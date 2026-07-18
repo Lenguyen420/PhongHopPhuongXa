@@ -5,6 +5,7 @@ import RoomForm from '@/components/Rooms/RoomForm'
 import RoomsGrid from '@/components/Rooms/RoomsGrid'
 import RoomsHeader from '@/components/Rooms/RoomsHeader'
 import RoomsToolbar from '@/components/Rooms/RoomsToolbar'
+import { deviceCategories, devicesData } from '@/datas/devices'
 import {
   useCreateRoomMutation,
   useLazyRoomQuery,
@@ -15,7 +16,6 @@ import { uploadAttachment } from '@/services/files'
 
 const roomStatuses = ['Tất cả', 'Đang sử dụng', 'Trống', 'Bảo trì']
 const roomCapacities = ['Tất cả', 'Dưới 30 người', '30 - 60 người', 'Trên 60 người']
-const roomDevices = ['Camera', 'Micro', 'Màn hình', 'Máy chiếu', 'Loa']
 const statusToApi = { 'Đang sử dụng': 'IN_USE', Trống: 'AVAILABLE', 'Bảo trì': 'MAINTENANCE' }
 const statusFromApi = { IN_USE: 'Đang sử dụng', AVAILABLE: 'Trống', MAINTENANCE: 'Bảo trì' }
 
@@ -123,7 +123,8 @@ function RoomsPage() {
       <RoomDetail onClose={() => setSelectedRoom(null)} room={selectedRoom} />
       {roomFormState.visible && (
         <RoomForm
-          devices={roomDevices}
+          deviceCategories={deviceCategories}
+          devices={devicesData}
           mode={roomFormState.mode}
           onSave={handleSaveRoom}
           onClose={() => setRoomFormState((currentState) => ({ ...currentState, visible: false }))}
