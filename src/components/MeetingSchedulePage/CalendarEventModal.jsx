@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import toast from 'react-hot-toast'
 import {
   Bell,
   CalendarDays,
@@ -17,6 +19,10 @@ import { formatFullDate, parseDate, typeStyles } from './calendarUtils'
 import { downloadAttachment } from '@/services/files'
 
 function CalendarEventModal({ meeting, onClose, onEdit, onCancel }) {
+  const [participationMode, setParticipationMode] = useState(null)
+  const [delegateInfo, setDelegateInfo] = useState({ email: '', name: '', phone: '', position: '' })
+  const [declineReason, setDeclineReason] = useState('')
+
   if (!meeting) {
     return null
   }
@@ -24,6 +30,27 @@ function CalendarEventModal({ meeting, onClose, onEdit, onCancel }) {
   const styles = typeStyles[meeting.type] ?? typeStyles['giao-ban']
   const hasMinutes = meeting.minutesStatus && meeting.minutesStatus !== 'NONE'
   const meetingRoomId = meeting.id
+  const meetingRoomUrl = `/meeting-room/${meetingRoomId}`
+
+  const handleAgreeJoin = () => {
+    toast.success('Đã xác nhận đồng ý tham gia cuộc họp')
+    setParticipationMode(null)
+    window.open(meetingRoomUrl, '_blank')
+  }
+
+  const handleDelegateSubmit = (event) => {
+    event.preventDefault()
+    toast.success(`Đã chuyển lịch tham dự cho ${delegateInfo.name}`)
+    setParticipationMode(null)
+    setDelegateInfo({ email: '', name: '', phone: '', position: '' })
+  }
+
+  const handleDeclineSubmit = (event) => {
+    event.preventDefault()
+    toast.success('Đã ghi nhận phản hồi không đồng ý tham gia')
+    setParticipationMode(null)
+    setDeclineReason('')
+  }
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-3 py-6 backdrop-blur-sm">
@@ -200,7 +227,7 @@ function CalendarEventModal({ meeting, onClose, onEdit, onCancel }) {
           <button
             className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#2563EB] px-4 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700"
             disabled={!meeting.canJoin}
-            onClick={() => window.open(`/meeting-room/${meetingRoomId}`, '_blank')}
+            onClick={() => setParticipationMode('choice')}
             type="button"
           >
             <Video size={18} />
@@ -226,6 +253,100 @@ function CalendarEventModal({ meeting, onClose, onEdit, onCancel }) {
           </button>
         </footer>
       </section>
+
+      {participationMode && (
+        <ParticipationModal
+          declineReason={declineReason}
+          delegateInfo={delegateInfo}
+          meetingTitle={meeting.title}
+          mode={participationMode}
+          onAgree={handleAgreeJoin}
+          onClose={() => setParticipationMode(null)}
+          onDeclineChange={setDeclineReason}
+          onDeclineSubmit={handleDeclineSubmit}
+          onDelegateChange={setDelegateInfo}
+          onDelegateSubmit={handleDelegateSubmit}
+          setMode={setParticipationMode}
+        />
+      )}
+    </div>
+  )
+}
+
+function ParticipationModal({ declineReason, delegateInfo, meetingTitle, mode, onAgree, onClose, onDeclineChange, onDeclineSubmit, onDelegateChange, onDelegateSubmit, setMode }) {
+  return (
+    <div className="fixed inset-0 z-[60] grid place-items-center bg-slate-950/50 px-3 py-6 backdrop-blur-sm">
+      <section className="w-full max-w-2xl overflow-hidden rounded-2xl border border-gray-300 bg-white shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-300 px-5 py-4">
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2563EB]">Xác nhận tham dự</p>
+            <h3 className="mt-2 break-words text-lg font-bold text-slate-950">{meetingTitle}</h3>
+          </div>
+          <button aria-label="Đóng xác nhận tham dự" className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950" onClick={onClose} type="button">
+            <X size={20} />
+          </button>
+        </div>
+
+        {mode === 'choice' && (
+          <div className="grid gap-3 p-5 sm:grid-cols-3">
+            <button className="grid gap-2 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-left transition hover:bg-blue-100" onClick={onAgree} type="button">
+              <span className="grid h-10 w-10 place-items-center rounded-2xl bg-white text-[#2563EB]"><Video size={18} /></span>
+              <span className="font-bold text-slate-950">Đồng ý tham gia</span>
+              <span className="text-sm font-medium leading-5 text-slate-500">Xác nhận và mở phòng họp trực tuyến.</span>
+            </button>
+            <button className="grid gap-2 rounded-2xl border border-gray-300 bg-white p-4 text-left transition hover:bg-slate-50" onClick={() => setMode('delegate')} type="button">
+              <span className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-100 text-slate-600"><UserRound size={18} /></span>
+              <span className="font-bold text-slate-950">Chuyển cho người khác</span>
+              <span className="text-sm font-medium leading-5 text-slate-500">Nhập thông tin người tham dự thay.</span>
+            </button>
+            <button className="grid gap-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-left transition hover:bg-red-100" onClick={() => setMode('decline')} type="button">
+              <span className="grid h-10 w-10 place-items-center rounded-2xl bg-white text-red-600"><X size={18} /></span>
+              <span className="font-bold text-slate-950">Không đồng ý</span>
+              <span className="text-sm font-medium leading-5 text-slate-500">Gửi lý do không thể tham dự.</span>
+            </button>
+          </div>
+        )}
+
+        {mode === 'delegate' && (
+          <form className="grid gap-4 p-5" onSubmit={onDelegateSubmit}>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FormInput label="Họ và tên" name="name" onChange={onDelegateChange} required value={delegateInfo.name} />
+              <FormInput label="Chức vụ" name="position" onChange={onDelegateChange} required value={delegateInfo.position} />
+              <FormInput label="Email" name="email" onChange={onDelegateChange} required type="email" value={delegateInfo.email} />
+              <FormInput label="Số điện thoại" name="phone" onChange={onDelegateChange} required value={delegateInfo.phone} />
+            </div>
+            <ModalActions onBack={() => setMode('choice')} submitLabel="Xác nhận chuyển" />
+          </form>
+        )}
+
+        {mode === 'decline' && (
+          <form className="grid gap-4 p-5" onSubmit={onDeclineSubmit}>
+            <label className="grid gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Lý do không đồng ý tham gia</span>
+              <textarea className="min-h-32 rounded-2xl border border-gray-300 bg-white px-3 py-3 text-sm font-semibold leading-6 text-slate-700 outline-none transition focus:border-[#2563EB] focus:ring-4 focus:ring-blue-100" onChange={(event) => onDeclineChange(event.target.value)} placeholder="Nhập lý do..." required value={declineReason} />
+            </label>
+            <ModalActions onBack={() => setMode('choice')} submitLabel="Gửi phản hồi" />
+          </form>
+        )}
+      </section>
+    </div>
+  )
+}
+
+function FormInput({ label, name, onChange, required = false, type = 'text', value }) {
+  return (
+    <label className="grid gap-1.5">
+      <span className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</span>
+      <input className="h-11 rounded-2xl border border-gray-300 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#2563EB] focus:ring-4 focus:ring-blue-100" name={name} onChange={(event) => onChange((current) => ({ ...current, [name]: event.target.value }))} required={required} type={type} value={value} />
+    </label>
+  )
+}
+
+function ModalActions({ onBack, submitLabel }) {
+  return (
+    <div className="flex flex-col-reverse gap-2 border-t border-gray-300 pt-4 sm:flex-row sm:justify-end">
+      <button className="inline-flex h-11 items-center justify-center rounded-2xl border border-gray-300 bg-white px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50" onClick={onBack} type="button">Quay lại</button>
+      <button className="inline-flex h-11 items-center justify-center rounded-2xl bg-[#2563EB] px-5 text-sm font-bold text-white transition hover:bg-blue-700" type="submit">{submitLabel}</button>
     </div>
   )
 }

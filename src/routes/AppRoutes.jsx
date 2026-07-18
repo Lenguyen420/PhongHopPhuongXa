@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import MainLayout from '@/layouts/MainLayout'
 import DashboardPage from '@/pages/DashboardPage'
+import DevicesPage from '@/pages/DevicesPage'
 import DocumentsPage from '@/pages/DocumentsPage'
 import MeetingSchedulePage from '@/pages/MeetingSchedulePage'
 import MeetingRoomPage from '@/pages/MeetingRoomPage'
@@ -24,6 +25,7 @@ function AppRoutes() {
           <Route path="lich-hop" element={<MeetingSchedulePage />} />
           <Route path="cuoc-hop" element={<MeetingsPage />} />
           <Route path="phong-hop" element={<RoomsPage />} />
+          <Route path="thiet-bi" element={<DevicesPage />} />
           <Route path="tai-lieu" element={<DocumentsPage />} />
           <Route path="bien-ban" element={<MinutesPage />} />
           <Route path="nguoi-dung" element={<UsersPage />} />
