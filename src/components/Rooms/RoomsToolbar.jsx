@@ -1,4 +1,5 @@
 import { Grid3X3, List, Search } from 'lucide-react'
+import AppSelect from '@/components/ui/AppSelect'
 
 function RoomsToolbar({
   capacityOptions,
@@ -25,35 +26,25 @@ function RoomsToolbar({
           </span>
         </label>
 
-        <label className="grid gap-1.5">
+        <div className="grid gap-1.5">
           <span className="text-xs font-bold text-slate-500">Trạng thái</span>
-          <select
-            className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#2563EB] focus:ring-4 focus:ring-blue-100"
+          <AppSelect
+            aria-label="Trạng thái phòng"
             onChange={(event) => onFilterChange('status', event.target.value)}
+            options={statusOptions}
             value={filters.status}
-          >
-            {statusOptions.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </select>
-        </label>
+          />
+        </div>
 
-        <label className="grid gap-1.5">
+        <div className="grid gap-1.5">
           <span className="text-xs font-bold text-slate-500">Sức chứa</span>
-          <select
-            className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#2563EB] focus:ring-4 focus:ring-blue-100"
+          <AppSelect
+            aria-label="Sức chứa phòng"
             onChange={(event) => onFilterChange('capacity', event.target.value)}
+            options={capacityOptions}
             value={filters.capacity}
-          >
-            {capacityOptions.map((capacity) => (
-              <option key={capacity} value={capacity}>
-                {capacity}
-              </option>
-            ))}
-          </select>
-        </label>
+          />
+        </div>
       </div>
 
       <div className="flex rounded-2xl bg-slate-100 p-1">

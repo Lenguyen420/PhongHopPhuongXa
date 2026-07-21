@@ -5,14 +5,16 @@ import RoomForm from '@/components/Rooms/RoomForm'
 import RoomsGrid from '@/components/Rooms/RoomsGrid'
 import RoomsHeader from '@/components/Rooms/RoomsHeader'
 import RoomsToolbar from '@/components/Rooms/RoomsToolbar'
-import { deviceCategories, devicesData } from '@/datas/devices'
 import {
   useCreateRoomMutation,
   useLazyRoomQuery,
   useRoomsQuery,
   useUpdateRoomMutation,
+  useDeviceOptionsQuery,
+  useDevicesQuery,
 } from '@/services/meetingApi'
 import { uploadAttachment } from '@/services/files'
+import { getApiErrorMessage } from '@/services/apiError'
 
 const roomStatuses = ['Tất cả', 'Đang sử dụng', 'Trống', 'Bảo trì']
 const roomCapacities = ['Tất cả', 'Dưới 30 người', '30 - 60 người', 'Trên 60 người']
@@ -30,6 +32,13 @@ function RoomsPage() {
   const [roomFormState, setRoomFormState] = useState({ mode: 'create', room: null, visible: false })
   const [selectedRoom, setSelectedRoom] = useState(null)
   const [viewMode, setViewMode] = useState('grid')
+  const { data: deviceResponse } = useDevicesQuery({ page: 0, size: 100, status: 'ACTIVE' })
+  const { data: deviceOptions } = useDeviceOptionsQuery()
+  const roomDevices = (deviceResponse?.data ?? []).map((device) => ({
+    ...device,
+    category: device.category?.name ?? 'Khác',
+    status: device.status === 'ACTIVE' ? 'Đang hoạt động' : device.status,
+  }))
 
   const capacityRange = {
     'Dưới 30 người': 'UNDER_30',
@@ -85,7 +94,7 @@ function RoomsPage() {
       setRoomFormState((state) => ({ ...state, visible: false }))
       refetch()
     } catch (error) {
-      toast.error(error?.data?.message || 'Không thể lưu phòng họp')
+      toast.error(getApiErrorMessage(error, 'Không thể lưu phòng họp'))
     }
   }
 
@@ -123,8 +132,8 @@ function RoomsPage() {
       <RoomDetail onClose={() => setSelectedRoom(null)} room={selectedRoom} />
       {roomFormState.visible && (
         <RoomForm
-          deviceCategories={deviceCategories}
-          devices={devicesData}
+          deviceCategories={(deviceOptions?.categories ?? []).map((item) => item.name)}
+          devices={roomDevices}
           mode={roomFormState.mode}
           onSave={handleSaveRoom}
           onClose={() => setRoomFormState((currentState) => ({ ...currentState, visible: false }))}

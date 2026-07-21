@@ -27,7 +27,7 @@ function AppRoutes() {
           <Route path="phong-hop" element={<RoomsPage />} />
           <Route path="thiet-bi" element={<DevicesPage />} />
           <Route path="tai-lieu" element={<DocumentsPage />} />
-          <Route path="bien-ban" element={<MinutesPage />} />
+          <Route path="bien-ban/:meetingId?" element={<MinutesPage />} />
           <Route path="nguoi-dung" element={<UsersPage />} />
           <Route path="bao-cao" element={<ReportsPage />} />
           <Route path="cai-dat" element={<SettingsPage />} />

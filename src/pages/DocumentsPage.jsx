@@ -1,148 +1,242 @@
 import { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
+import { getApiErrorMessage } from '@/services/apiError'
 import DocumentsContent from '@/components/Documents/DocumentsContent'
 import DocumentsHeader from '@/components/Documents/DocumentsHeader'
 import DocumentsSidebar from '@/components/Documents/DocumentsSidebar'
 import DocumentModal from '@/components/Documents/DocumentModal'
-import { documentCategories, documentTypes, meetingDocuments } from '@/datas/meetingDocuments'
+import { http } from '@/services/files'
+import {
+  useCreateDocumentCategoryMutation,
+  useDeleteDocumentMutation,
+  useDocumentOptionsQuery,
+  useDocumentsQuery,
+  useLazyDocumentHistoryQuery,
+  useUpdateDocumentMutation,
+  useUploadDocumentMutation,
+  useUploadDocumentVersionMutation,
+} from '@/services/meetingApi'
 
-const localDocumentsKey = 'meetingDocuments.localUploads'
-
-const initialFilters = {
-  type: '',
-  uploader: '',
-}
-
-const getStoredDocuments = () => {
-  if (typeof window === 'undefined') {
-    return []
-  }
-
-  try {
-    const storedDocuments = window.localStorage.getItem(localDocumentsKey)
-
-    return storedDocuments ? JSON.parse(storedDocuments) : []
-  } catch {
-    return []
-  }
-}
+const initialFilters = { type: '', uploader: '' }
+const formatSize = (size) =>
+  size >= 1024 * 1024
+    ? `${(size / 1024 / 1024).toFixed(1)} MB`
+    : `${Math.max(1, size / 1024).toFixed(1)} KB`
 
 function DocumentsPage() {
-  const [documents, setDocuments] = useState(() => [...meetingDocuments, ...getStoredDocuments()])
-  const [categories, setCategories] = useState(() => {
-    const storedCategories = getStoredDocuments().map((document) => document.category)
-
-    return [...new Set([...documentCategories, ...storedCategories])]
-  })
+  const { data: response, isLoading, isError, refetch } = useDocumentsQuery({ page: 0, size: 200 })
+  const { data: options } = useDocumentOptionsQuery()
+  const [createCategory] = useCreateDocumentCategoryMutation()
+  const [uploadDocument] = useUploadDocumentMutation()
+  const [uploadDocumentVersion] = useUploadDocumentVersionMutation()
+  const [updateDocument] = useUpdateDocumentMutation()
+  const [deleteDocument] = useDeleteDocumentMutation()
+  const [loadHistory] = useLazyDocumentHistoryQuery()
+  const [history, setHistory] = useState([])
   const [selectedCategory, setSelectedCategory] = useState('Tất cả')
   const [searchValue, setSearchValue] = useState('')
   const [filters, setFilters] = useState(initialFilters)
   const [modalState, setModalState] = useState({ mode: null, document: null })
 
-  const uploaders = useMemo(() => [...new Set(documents.map((document) => document.uploader))], [documents])
-
-  const categoryCounts = useMemo(() => {
-    const counts = documents.reduce(
-      (result, document) => ({
-        ...result,
-        [document.category]: (result[document.category] || 0) + 1,
-      }),
-      { 'Tất cả': documents.length },
-    )
-
-    return counts
-  }, [documents])
-
+  const categories = useMemo(
+    () => ['Tất cả', ...(options?.categories ?? []).map((item) => item.name)],
+    [options],
+  )
+  const documents = useMemo(
+    () =>
+      (response?.data ?? []).map((document) => ({
+        ...document,
+        categoryId: document.category?.id,
+        category: document.category?.name ?? 'Chưa phân loại',
+        uploader: document.uploader?.name ?? 'Không xác định',
+        size: formatSize(document.size),
+        uploadDate: document.uploadedAt
+          ? new Date(document.uploadedAt).toLocaleDateString('vi-VN')
+          : '',
+        updatedAt: document.updatedAt
+          ? new Date(document.updatedAt).toLocaleDateString('vi-VN')
+          : '',
+        version: `v${document.version}.0`,
+      })),
+    [response],
+  )
+  const uploaders = (options?.uploaders ?? []).map((item) => item.name)
+  const categoryCounts = useMemo(
+    () =>
+      documents.reduce(
+        (result, document) => ({
+          ...result,
+          [document.category]: (result[document.category] || 0) + 1,
+        }),
+        { 'Tất cả': documents.length },
+      ),
+    [documents],
+  )
   const filteredDocuments = useMemo(() => {
-    const normalizedSearch = searchValue.trim().toLowerCase()
-
-    return documents.filter((document) => {
-      const matchesSearch = normalizedSearch.length === 0 || document.name.toLowerCase().includes(normalizedSearch)
-      const matchesCategory = selectedCategory === 'Tất cả' || document.category === selectedCategory
-      const matchesType = !filters.type || document.type === filters.type
-      const matchesUploader = !filters.uploader || document.uploader === filters.uploader
-
-      return matchesSearch && matchesCategory && matchesType && matchesUploader
-    })
+    const keyword = searchValue.trim().toLowerCase()
+    return documents.filter(
+      (document) =>
+        (!keyword || document.name.toLowerCase().includes(keyword)) &&
+        (selectedCategory === 'Tất cả' || document.category === selectedCategory) &&
+        (!filters.type || document.type === filters.type) &&
+        (!filters.uploader || document.uploader === filters.uploader),
+    )
   }, [documents, filters, searchValue, selectedCategory])
-
-  const handleFilterChange = (name, value) => {
-    setFilters((currentFilters) => ({
-      ...currentFilters,
-      [name]: value,
-    }))
+  const closeModal = () => setModalState({ mode: null, document: null })
+  const openHistory = async (document) => {
+    setModalState({ mode: 'history', document })
+    try {
+      setHistory(await loadHistory(document.id).unwrap())
+    } catch {
+      setHistory([])
+      toast.error('Không thể tải lịch sử tài liệu')
+    }
   }
-
-  const handleRefresh = () => {
-    setSearchValue('')
-    setFilters(initialFilters)
-    setSelectedCategory('Tất cả')
-  }
-
-  const openModal = (mode, document = null) => {
-    setModalState({ mode, document })
-  }
-
-  const closeModal = () => {
-    setModalState({ mode: null, document: null })
-  }
-
-  const handleCreateFolder = (folderName) => {
-    const normalizedFolderName = folderName.trim()
-    const isDuplicate = categories.some((category) => category.toLowerCase() === normalizedFolderName.toLowerCase())
-
-    if (!normalizedFolderName || isDuplicate) {
+  const createFolder = async (name, description) => {
+    try {
+      await createCategory({ name, description }).unwrap()
+      toast.success(`Đã tạo thư mục "${name}"`)
+      closeModal()
+      return true
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Không thể tạo thư mục'))
       return false
     }
-
-    setCategories((currentCategories) => [...currentCategories, normalizedFolderName])
-    setSelectedCategory(normalizedFolderName)
-    closeModal()
-    toast.success(`Đã tạo thư mục "${normalizedFolderName}"`)
-
-    return true
   }
-
-  const handleUploadDocument = (documentData) => {
-    const uploadedDocument = {
-      ...documentData,
-      id: Date.now(),
+  const upload = async (data) => {
+    const categoryId = options?.categories?.find((item) => item.name === data.category)?.id
+    const body = new FormData()
+    body.append('file', data.file)
+    body.append('categoryId', categoryId)
+    if (data.description) body.append('description', data.description)
+    if (data.note) body.append('note', data.note)
+    try {
+      await uploadDocument(body).unwrap()
+      toast.success(`Đã upload "${data.name}"`)
+      closeModal()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Không thể upload tài liệu'))
     }
-
-    setDocuments((currentDocuments) => {
-      const nextDocuments = [uploadedDocument, ...currentDocuments]
-      const localDocuments = nextDocuments.filter((document) => document.isLocal)
-
+  }
+  const download = async (document) => {
+    try {
+      const response = await http.get(document.downloadUrl, { responseType: 'blob' })
+      const url = URL.createObjectURL(response.data)
+      const link = window.document.createElement('a')
+      link.href = url
+      link.download = document.name
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      toast.error('Không thể tải tài liệu')
+    }
+  }
+  const chooseVersionFile = (document) => {
+    const input = window.document.createElement('input')
+    input.type = 'file'
+    input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.pptx'
+    input.onchange = async () => {
+      const file = input.files?.[0]
+      if (!file) return
+      const body = new FormData()
+      body.append('file', file)
       try {
-        window.localStorage.setItem(localDocumentsKey, JSON.stringify(localDocuments))
-      } catch {
-        toast.error('Tệp hơi lớn nên chỉ lưu trong phiên hiện tại')
+        await uploadDocumentVersion({ id: document.id, body }).unwrap()
+        toast.success(`Đã tạo phiên bản mới cho "${document.name}"`)
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Không thể upload phiên bản mới'))
       }
-
-      return nextDocuments
-    })
-
-    if (!categories.includes(uploadedDocument.category)) {
-      setCategories((currentCategories) => [...currentCategories, uploadedDocument.category])
     }
-
-    setSelectedCategory(uploadedDocument.category)
-    closeModal()
-    toast.success(`Đã upload "${uploadedDocument.name}"`)
+    input.click()
+  }
+  const handleDocumentAction = async (action, document) => {
+    if (action === 'download') return download(document)
+    if (action === 'version') return chooseVersionFile(document)
+    if (action === 'share') {
+      await navigator.clipboard.writeText(`${window.location.origin}${document.downloadUrl}`)
+      toast.success('Đã sao chép liên kết tài liệu')
+      return
+    }
+    if (action === 'rename') {
+      const name = window.prompt('Tên tài liệu mới', document.name)?.trim()
+      if (!name || name === document.name) return
+      try {
+        await updateDocument({ id: document.id, body: { name } }).unwrap()
+        toast.success('Đã đổi tên tài liệu')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Không thể đổi tên tài liệu'))
+      }
+      return
+    }
+    if (action === 'delete' && window.confirm(`Xóa tài liệu "${document.name}"?`)) {
+      try {
+        await deleteDocument(document.id).unwrap()
+        toast.success('Đã xóa tài liệu')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Không thể xóa tài liệu'))
+      }
+    }
   }
 
+  if (isLoading) return <State text="Đang tải tài liệu..." />
+  if (isError) return <State action={refetch} text="Không thể tải tài liệu" />
   return (
     <div className="mx-auto grid max-w-[1600px] gap-4 sm:gap-6">
-      <DocumentsHeader filters={filters} onCreateFolder={() => openModal('folder')} onFilterChange={handleFilterChange} onRefresh={handleRefresh} onUpload={() => openModal('upload')} searchValue={searchValue} setSearchValue={setSearchValue} types={documentTypes} uploaders={uploaders} />
-
+      <DocumentsHeader
+        filters={filters}
+        onCreateFolder={() => setModalState({ mode: 'folder', document: null })}
+        onFilterChange={(name, value) => setFilters((current) => ({ ...current, [name]: value }))}
+        onRefresh={() => {
+          setSearchValue('')
+          setFilters(initialFilters)
+          setSelectedCategory('Tất cả')
+          refetch()
+        }}
+        onUpload={() => setModalState({ mode: 'upload', document: null })}
+        searchValue={searchValue}
+        setSearchValue={setSearchValue}
+        types={options?.types ?? []}
+        uploaders={uploaders}
+      />
       <section className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-        <DocumentsSidebar categories={categories} categoryCounts={categoryCounts} selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
-        <DocumentsContent documents={filteredDocuments} onOpenDetail={(document) => openModal('detail', document)} onOpenHistory={(document) => openModal('history', document)} onUpload={() => openModal('upload')} />
+        <DocumentsSidebar
+          categories={categories}
+          categoryCounts={categoryCounts}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+        />
+        <DocumentsContent
+          documents={filteredDocuments}
+          onAction={handleDocumentAction}
+          onOpenDetail={(document) => setModalState({ mode: 'detail', document })}
+          onOpenHistory={openHistory}
+          onUpload={() => setModalState({ mode: 'upload', document: null })}
+        />
       </section>
-
-      <DocumentModal categories={categories} document={modalState.document} mode={modalState.mode} onClose={closeModal} onCreateFolder={handleCreateFolder} onUploadDocument={handleUploadDocument} />
+      <DocumentModal
+        categories={categories}
+        document={modalState.document}
+        history={history}
+        mode={modalState.mode}
+        onClose={closeModal}
+        onCreateFolder={createFolder}
+        onDownload={download}
+        onUploadDocument={upload}
+      />
     </div>
   )
 }
 
+function State({ action, text }) {
+  return (
+    <div className="rounded-2xl bg-white p-8 text-center font-semibold text-slate-600 ring-1 ring-slate-200">
+      {text}
+      {action && (
+        <button className="ml-3 text-blue-600" onClick={action} type="button">
+          Thử lại
+        </button>
+      )}
+    </div>
+  )
+}
 export default DocumentsPage

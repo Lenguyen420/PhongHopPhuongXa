@@ -24,6 +24,7 @@ import {
   Users,
   Video,
 } from 'lucide-react'
+import AppSelect from '@/components/ui/AppSelect'
 
 function MeetingForm({
   departments,
@@ -49,17 +50,13 @@ function MeetingForm({
             />
           </Field>
           <Field icon={FileText} label="Loại cuộc họp">
-            <select
-              className={inputClass}
+            <AppSelect
+              buttonClassName="h-12 px-4"
               defaultValue={meeting?.typeId ?? types[0]?.id}
               name="typeId"
-            >
-              {types.map((type) => (
-                <option key={type.id} value={type.id}>
-                  {type.name}
-                </option>
-              ))}
-            </select>
+              options={types.map((type) => ({ label: type.name, value: type.id }))}
+              placeholder="Chọn loại cuộc họp"
+            />
           </Field>
           <Field className="lg:col-span-2" icon={AlignLeft} label="Mô tả">
             <textarea
@@ -69,54 +66,80 @@ function MeetingForm({
               placeholder="Nhập mô tả cuộc họp"
             />
           </Field>
-        </div>
-      </FormCard>
-
-      <FormCard icon={Clock3} title="Thời gian">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Field icon={CalendarDays} label="Ngày">
-            <input
-              className={inputClass}
-              defaultValue={meeting?.date ?? new Date().toISOString().slice(0, 10)}
-              name="date"
-              required
-              type="date"
-            />
-          </Field>
-          <Field icon={Clock3} label="Giờ bắt đầu">
-            <input
-              className={inputClass}
-              defaultValue={meeting?.startTime ?? '08:00'}
-              name="startTime"
-              required
-              type="time"
-            />
-          </Field>
-          <Field icon={Clock3} label="Giờ kết thúc">
-            <input
-              className={inputClass}
-              defaultValue={meeting?.endTime ?? '09:00'}
-              name="endTime"
-              required
-              type="time"
-            />
-          </Field>
-          <label className="flex items-end">
-            <span className="flex h-12 w-full items-center gap-3 rounded-2xl bg-slate-50 px-4 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
-              <input
-                className="h-4 w-4 accent-[#2563EB]"
-                defaultChecked={meeting?.allDay}
-                name="allDay"
-                type="checkbox"
+          <Field className="lg:col-span-2" icon={FileText} label="Nội dung">
+            <div className="overflow-hidden rounded-[20px] border border-slate-200 bg-white">
+              <div className="flex flex-wrap gap-2 border-b border-slate-200 bg-slate-50 p-3">
+                {[Bold, Italic, Underline, List, ListOrdered, AlignLeft, Undo2, Redo2].map(
+                  (Icon, index) => (
+                    <button
+                      className="grid h-9 w-9 place-items-center rounded-xl text-slate-600 transition hover:bg-white hover:text-[#2563EB]"
+                      key={index}
+                      type="button"
+                    >
+                      <Icon size={17} />
+                    </button>
+                  ),
+                )}
+              </div>
+              <textarea
+                className="min-h-36 w-full resize-y border-0 bg-white p-4 text-sm font-medium leading-7 text-slate-700 outline-none placeholder:text-slate-400"
+                defaultValue={meeting?.agenda ?? ''}
+                name="agenda"
+                placeholder="Nhập nội dung cuộc họp"
               />
-              Họp cả ngày
-            </span>
-          </label>
+            </div>
+          </Field>
+          <AttachmentFields
+            onDeleteFile={onDeleteFile}
+            onFilesChange={onFilesChange}
+            sampleFiles={sampleFiles}
+          />
         </div>
       </FormCard>
 
-      <FormCard icon={MapPin} title="Địa điểm">
-        <div className="grid gap-4">
+      <FormCard icon={Clock3} title="Thời gian & địa điểm">
+        <div className="grid gap-5">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Field icon={CalendarDays} label="Ngày">
+              <input
+                className={inputClass}
+                defaultValue={meeting?.date ?? new Date().toISOString().slice(0, 10)}
+                name="date"
+                required
+                type="date"
+              />
+            </Field>
+            <Field icon={Clock3} label="Giờ bắt đầu">
+              <input
+                className={inputClass}
+                defaultValue={meeting?.startTime ?? '08:00'}
+                name="startTime"
+                required
+                type="time"
+              />
+            </Field>
+            <Field icon={Clock3} label="Giờ kết thúc">
+              <input
+                className={inputClass}
+                defaultValue={meeting?.endTime ?? '09:00'}
+                name="endTime"
+                required
+                type="time"
+              />
+            </Field>
+            <label className="flex items-end">
+              <span className="flex h-12 w-full items-center gap-3 rounded-2xl bg-slate-50 px-4 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
+                <input
+                  className="h-4 w-4 accent-[#2563EB]"
+                  defaultChecked={meeting?.allDay}
+                  name="allDay"
+                  type="checkbox"
+                />
+                Họp cả ngày
+              </span>
+            </label>
+          </div>
+
           <div className="grid gap-3 sm:grid-cols-3">
             {[
               { label: 'Trực tiếp', icon: Building2 },
@@ -145,41 +168,36 @@ function MeetingForm({
           </div>
 
           <Field icon={Building2} label="Chọn phòng">
-            <select
-              className={inputClass}
+            <AppSelect
+              buttonClassName="h-12 px-4"
               defaultValue={meeting?.roomId ?? rooms[0]?.id}
               name="roomId"
-            >
-              {rooms.map((room) => (
-                <option key={room.id} value={room.id}>
-                  {room.name} - {room.capacity} người
-                </option>
-              ))}
-            </select>
+              options={rooms.map((room) => ({
+                label: `${room.name} - ${room.capacity} người`,
+                value: room.id,
+              }))}
+              placeholder="Chọn phòng họp"
+            />
           </Field>
         </div>
       </FormCard>
 
-      <FormCard icon={UserRound} title="Người chủ trì">
-        <Field icon={UserRound} label="Chọn người chủ trì">
-          <select
-            className={inputClass}
-            defaultValue={meeting?.hostId ?? hosts[0]?.id}
-            name="hostId"
-            required
-          >
-            {hosts.map((host) => (
-              <option key={host.id} value={host.id}>
-                {host.username}
-                {host.position ? ` - ${host.position}` : ''}
-              </option>
-            ))}
-          </select>
-        </Field>
-      </FormCard>
-
-      <FormCard icon={Users} title="Thành phần tham dự">
+      <FormCard icon={Users} title="Thành viên">
         <div className="grid gap-5">
+          <Field icon={UserRound} label="Người chủ trì">
+            <AppSelect
+              buttonClassName="h-12 px-4"
+              defaultValue={meeting?.hostId ?? hosts[0]?.id}
+              name="hostId"
+              options={hosts.map((host) => ({
+                label: `${host.username}${host.position ? ` - ${host.position}` : ''}`,
+                value: host.id,
+              }))}
+              placeholder="Chọn người chủ trì"
+            />
+          </Field>
+
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Người tham dự</p>
           <div className="grid gap-3 sm:grid-cols-2">
             {['Toàn bộ cán bộ', 'Chọn phòng ban'].map((item, index) => (
               <label
@@ -278,81 +296,64 @@ function MeetingForm({
           </div>
         </div>
       </FormCard>
+    </div>
+  )
+}
 
-      <FormCard icon={FileText} title="Nội dung cuộc họp">
-        <div className="overflow-hidden rounded-[20px] border border-slate-200 bg-white">
-          <div className="flex flex-wrap gap-2 border-b border-slate-200 bg-slate-50 p-3">
-            {[Bold, Italic, Underline, List, ListOrdered, AlignLeft, Undo2, Redo2].map(
-              (Icon, index) => (
-                <button
-                  className="grid h-9 w-9 place-items-center rounded-xl text-slate-600 transition hover:bg-white hover:text-[#2563EB]"
-                  key={index}
-                  type="button"
-                >
-                  <Icon size={17} />
-                </button>
-              ),
-            )}
-          </div>
-          <textarea
-            className="min-h-48 w-full resize-y border-0 bg-white p-4 text-sm font-medium leading-7 text-slate-700 outline-none placeholder:text-slate-400"
-            defaultValue={meeting?.agenda ?? ''}
-            name="agenda"
-          />
-        </div>
-      </FormCard>
+function AttachmentFields({ onDeleteFile, onFilesChange, sampleFiles }) {
+  return (
+    <div className="grid gap-4 lg:col-span-2">
+      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+        <Paperclip size={14} />
+        Tài liệu đính kèm
+      </p>
+      <label className="grid cursor-pointer place-items-center rounded-[20px] border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center transition hover:border-blue-300 hover:bg-blue-50">
+        <Upload className="text-[#2563EB]" size={28} />
+        <span className="mt-3 text-sm font-bold text-slate-800">
+          Tải lên PDF, DOCX, PPTX hoặc Excel
+        </span>
+        <span className="mt-1 text-xs font-medium text-slate-500">
+          Kéo thả file hoặc bấm để chọn
+        </span>
+        <input
+          className="sr-only"
+          multiple
+          onChange={(event) => onFilesChange?.([...event.target.files])}
+          type="file"
+        />
+      </label>
 
-      <FormCard icon={Paperclip} title="Tài liệu đính kèm">
-        <div className="grid gap-4">
-          <label className="grid cursor-pointer place-items-center rounded-[20px] border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center transition hover:border-blue-300 hover:bg-blue-50">
-            <Upload className="text-[#2563EB]" size={32} />
-            <span className="mt-3 text-sm font-bold text-slate-800">
-              Tải lên PDF, DOCX, PPTX hoặc Excel
-            </span>
-            <span className="mt-1 text-xs font-medium text-slate-500">
-              Kéo thả file hoặc bấm để chọn
-            </span>
-            <input
-              className="sr-only"
-              multiple
-              onChange={(event) => onFilesChange?.([...event.target.files])}
-              type="file"
-            />
-          </label>
-
-          <div className="grid gap-3">
-            {sampleFiles.map((file) => (
-              <div
-                className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3 ring-1 ring-slate-200"
-                key={file.id ?? file.name}
-              >
-                <span className="flex min-w-0 items-center gap-3">
-                  {file.type === 'Excel' ? (
-                    <FileSpreadsheet className="shrink-0 text-[#10B981]" size={20} />
-                  ) : (
-                    <File className="shrink-0 text-[#2563EB]" size={20} />
-                  )}
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-bold text-slate-800">
-                      {file.fileName ?? file.name}
-                    </span>
-                    <span className="text-xs font-medium text-slate-500">
-                      {file.mimeType ?? file.type} - {file.size}
-                    </span>
-                  </span>
+      <div className="grid gap-3">
+        {sampleFiles.map((file) => (
+          <div
+            className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3 ring-1 ring-slate-200"
+            key={file.id ?? file.name}
+          >
+            <span className="flex min-w-0 items-center gap-3">
+              {file.type === 'Excel' ? (
+                <FileSpreadsheet className="shrink-0 text-[#10B981]" size={20} />
+              ) : (
+                <File className="shrink-0 text-[#2563EB]" size={20} />
+              )}
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-bold text-slate-800">
+                  {file.fileName ?? file.name}
                 </span>
-                <button
-                  className="text-sm font-bold text-[#EF4444] hover:text-red-700"
-                  onClick={() => onDeleteFile?.(file)}
-                  type="button"
-                >
-                  Xóa
-                </button>
-              </div>
-            ))}
+                <span className="text-xs font-medium text-slate-500">
+                  {file.mimeType ?? file.type} - {file.size}
+                </span>
+              </span>
+            </span>
+            <button
+              className="text-sm font-bold text-[#EF4444] hover:text-red-700"
+              onClick={() => onDeleteFile?.(file)}
+              type="button"
+            >
+              Xóa
+            </button>
           </div>
-        </div>
-      </FormCard>
+        ))}
+      </div>
     </div>
   )
 }
