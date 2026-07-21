@@ -9,6 +9,7 @@ import {
   useUpdateMeetingMutation,
 } from '@/services/meetingApi'
 import { deleteAttachment, uploadAttachment } from '@/services/files'
+import { getApiErrorMessage } from '@/services/apiError'
 
 function MeetingsPage() {
   const navigate = useNavigate()
@@ -74,7 +75,7 @@ function MeetingsPage() {
       else toast.success(body.status === 'DRAFT' ? 'Đã lưu nháp' : 'Đã lưu cuộc họp')
       navigate('/lich-hop')
     } catch (error) {
-      toast.error(error?.data?.message || 'Không thể lưu cuộc họp')
+      toast.error(getApiErrorMessage(error, 'Không thể lưu cuộc họp'))
     }
   }
 

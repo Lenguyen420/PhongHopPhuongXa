@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { logout, setCredentials } from '@/app/authSlice'
+import { normalizeMeetingTypes } from '@/services/meetingTypes'
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5175',
@@ -37,10 +38,15 @@ const baseQueryWithRefresh = async (args, api, extraOptions) => {
 
 const unwrap = (response) => response.data
 
+const unwrapFormOptions = (response) => ({
+  ...response.data,
+  types: normalizeMeetingTypes(response.data?.types),
+})
+
 export const meetingApi = createApi({
   reducerPath: 'meetingApi',
   baseQuery: baseQueryWithRefresh,
-  tagTypes: ['Dashboard', 'Meeting', 'Room'],
+  tagTypes: ['Dashboard', 'Meeting', 'Room', 'Device', 'User', 'Document', 'Minutes', 'Report'],
   endpoints: (builder) => ({
     login: builder.mutation({
       query: (body) => ({ url: '/auth/admin-login', method: 'POST', body }),
@@ -51,9 +57,17 @@ export const meetingApi = createApi({
       transformResponse: unwrap,
       providesTags: ['Dashboard'],
     }),
-    formOptions: builder.query({ query: () => '/meeting-form-options', transformResponse: unwrap }),
+    formOptions: builder.query({
+      query: () => '/meeting-form-options',
+      transformResponse: unwrapFormOptions,
+    }),
     calendar: builder.query({
       query: (params) => ({ url: '/meetings/calendar', params }),
+      transformResponse: unwrap,
+      providesTags: ['Meeting'],
+    }),
+    meetings: builder.query({
+      query: (params) => ({ url: '/meetings', params }),
       transformResponse: unwrap,
       providesTags: ['Meeting'],
     }),
@@ -110,6 +124,138 @@ export const meetingApi = createApi({
       }),
       transformResponse: unwrap,
     }),
+    deviceOptions: builder.query({ query: () => '/device-options', transformResponse: unwrap }),
+    devices: builder.query({
+      query: (params) => ({ url: '/devices', params }),
+      transformResponse: unwrap,
+      providesTags: ['Device'],
+    }),
+    createDevice: builder.mutation({
+      query: (body) => ({ url: '/devices', method: 'POST', body }),
+      transformResponse: unwrap,
+      invalidatesTags: ['Device', 'Room'],
+    }),
+    updateDevice: builder.mutation({
+      query: ({ id, body }) => ({ url: `/devices/${id}`, method: 'PATCH', body }),
+      transformResponse: unwrap,
+      invalidatesTags: ['Device', 'Room'],
+    }),
+    updateDeviceStatus: builder.mutation({
+      query: ({ id, ...body }) => ({ url: `/devices/${id}/status`, method: 'PATCH', body }),
+      transformResponse: unwrap,
+      invalidatesTags: ['Device', 'Room'],
+    }),
+    deleteDevice: builder.mutation({
+      query: (id) => ({ url: `/devices/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['Device', 'Room'],
+    }),
+    userOptions: builder.query({ query: () => '/user-options', transformResponse: unwrap }),
+    users: builder.query({
+      query: (params) => ({ url: '/users', params }),
+      transformResponse: unwrap,
+      providesTags: ['User'],
+    }),
+    createUser: builder.mutation({
+      query: (body) => ({ url: '/users', method: 'POST', body }),
+      transformResponse: unwrap,
+      invalidatesTags: ['User'],
+    }),
+    updateUser: builder.mutation({
+      query: ({ id, body }) => ({ url: `/users/${id}`, method: 'PATCH', body }),
+      transformResponse: unwrap,
+      invalidatesTags: ['User'],
+    }),
+    updateUserStatus: builder.mutation({
+      query: ({ id, status }) => ({
+        url: `/users/${id}/status`,
+        method: 'PATCH',
+        body: { status },
+      }),
+      transformResponse: unwrap,
+      invalidatesTags: ['User'],
+    }),
+    resetUserPassword: builder.mutation({
+      query: ({ id, password }) => ({
+        url: `/users/${id}/reset-password`,
+        method: 'POST',
+        body: { password },
+      }),
+    }),
+    setUserPermissions: builder.mutation({
+      query: ({ id, permissionIds }) => ({
+        url: `/users/${id}/permissions`,
+        method: 'PUT',
+        body: { permissionIds },
+      }),
+      transformResponse: unwrap,
+      invalidatesTags: ['User'],
+    }),
+    deleteUser: builder.mutation({
+      query: (id) => ({ url: `/users/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['User'],
+    }),
+    documentOptions: builder.query({ query: () => '/document-options', transformResponse: unwrap }),
+    documents: builder.query({
+      query: (params) => ({ url: '/documents', params }),
+      transformResponse: unwrap,
+      providesTags: ['Document'],
+    }),
+    createDocumentCategory: builder.mutation({
+      query: (body) => ({ url: '/document-categories', method: 'POST', body }),
+      transformResponse: unwrap,
+      invalidatesTags: ['Document'],
+    }),
+    uploadDocument: builder.mutation({
+      query: (body) => ({ url: '/documents', method: 'POST', body }),
+      transformResponse: unwrap,
+      invalidatesTags: ['Document'],
+    }),
+    uploadDocumentVersion: builder.mutation({
+      query: ({ id, body }) => ({ url: `/documents/${id}/versions`, method: 'POST', body }),
+      transformResponse: unwrap,
+      invalidatesTags: ['Document'],
+    }),
+    updateDocument: builder.mutation({
+      query: ({ id, body }) => ({ url: `/documents/${id}`, method: 'PATCH', body }),
+      transformResponse: unwrap,
+      invalidatesTags: ['Document'],
+    }),
+    documentHistory: builder.query({
+      query: (id) => `/documents/${id}/history`,
+      transformResponse: unwrap,
+    }),
+    deleteDocument: builder.mutation({
+      query: (id) => ({ url: `/documents/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['Document'],
+    }),
+    minutes: builder.query({
+      query: (meetingId) => `/meetings/${meetingId}/minutes`,
+      transformResponse: unwrap,
+      providesTags: (_r, _e, id) => [{ type: 'Minutes', id }],
+    }),
+    saveMinutes: builder.mutation({
+      query: ({ meetingId, body }) => ({
+        url: `/meetings/${meetingId}/minutes`,
+        method: 'PUT',
+        body,
+      }),
+      transformResponse: unwrap,
+      invalidatesTags: (_r, _e, { meetingId }) => [{ type: 'Minutes', id: meetingId }, 'Report'],
+    }),
+    updateMinutesStatus: builder.mutation({
+      query: ({ meetingId, status }) => ({
+        url: `/meetings/${meetingId}/minutes/status`,
+        method: 'PATCH',
+        body: { status },
+      }),
+      transformResponse: unwrap,
+      invalidatesTags: (_r, _e, { meetingId }) => [{ type: 'Minutes', id: meetingId }],
+    }),
+    meetingReports: builder.query({
+      query: (params) => ({ url: '/meeting-reports', params }),
+      transformResponse: unwrap,
+      providesTags: ['Report'],
+    }),
   }),
 })
 
@@ -118,6 +264,7 @@ export const {
   useDashboardQuery,
   useFormOptionsQuery,
   useCalendarQuery,
+  useMeetingsQuery,
   useLazyMeetingQuery,
   useMeetingQuery,
   useLiveMeetingQuery,
@@ -129,4 +276,31 @@ export const {
   useCreateRoomMutation,
   useUpdateRoomMutation,
   useSendMessageMutation,
+  useDeviceOptionsQuery,
+  useDevicesQuery,
+  useCreateDeviceMutation,
+  useUpdateDeviceMutation,
+  useUpdateDeviceStatusMutation,
+  useDeleteDeviceMutation,
+  useUserOptionsQuery,
+  useUsersQuery,
+  useCreateUserMutation,
+  useUpdateUserMutation,
+  useUpdateUserStatusMutation,
+  useResetUserPasswordMutation,
+  useSetUserPermissionsMutation,
+  useDeleteUserMutation,
+  useDocumentOptionsQuery,
+  useDocumentsQuery,
+  useCreateDocumentCategoryMutation,
+  useUploadDocumentMutation,
+  useUploadDocumentVersionMutation,
+  useUpdateDocumentMutation,
+  useDocumentHistoryQuery,
+  useLazyDocumentHistoryQuery,
+  useDeleteDocumentMutation,
+  useMinutesQuery,
+  useSaveMinutesMutation,
+  useUpdateMinutesStatusMutation,
+  useMeetingReportsQuery,
 } = meetingApi
